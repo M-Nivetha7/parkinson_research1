@@ -8,25 +8,6 @@ A deep learning framework for **contactless air-writing recognition** designed t
 
 ---
 
-## 1. System Architecture
-
-```mermaid
-graph LR
-    A["Camera / Air-Writing Gesture"] --> B["Vision Hand Tracker\n(OpenCV Contours + Optical Flow)"]
-    B --> C["Raw Trajectory\nT = {(x_t, y_t, z_t, t)}"]
-    D["PD Motor Simulator\n(4-7Hz Tremor, Bradykinesia, Micrographia)"] -.-> C
-    C --> E["Preprocessing & Normalization\n(Butterworth/Savitzky-Golay + Arc-length Resampling)"]
-    E --> F["Deep Spatiotemporal Feature Learning"]
-    F --> G1["Multi-Scale 1D-CNN + BiLSTM + Attention"]
-    F --> G2["Trajectory Transformer Encoder"]
-    F --> G3["Kinematic & Spectral ML Baselines (RF/SVM)"]
-    G1 & G2 & G3 --> H["Calibrated Ensemble Classifier\nP(y|T)"]
-    H --> I["Assistive NLP Decoder\n(Beam Search + Levenshtein Auto-Correction)"]
-    I --> J["Assistive Text & Voice Output (TTS)"]
-```
-
----
-
 # AirAssist: Contactless Air-Writing Recognition System
 
 AirAssist is a Python-based air-writing application that explores contactless character recognition and assistive text interaction using hand movements captured through a webcam or drawn on a digital canvas.
