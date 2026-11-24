@@ -27,80 +27,275 @@ graph LR
 
 ---
 
-## 2. Key Modules
+# AirAssist: Contactless Air-Writing Recognition System
 
-- **Biomechanical Parkinsonian Motor Modeling (`data/parkinson_simulator.py`)**:
-  - Simulates 4–7 Hz resting/action tremors with waxing-and-waning amplitude modulation.
-  - Models bradykinesia (velocity deceleration), micrographia (progressive amplitude shrinkage), rigidity/freezing episodes, and dysmetria/overshoot at stroke corners.
-- **Tremor-Aware Preprocessing Pipeline (`preprocessing/`)**:
-  - Zero-phase Butterworth low-pass and Savitzky-Golay polynomial filters.
-  - Uniform arc-length resampling ($L=64$) and bounding-box spatial centering with aspect-ratio preservation.
-- **Deep Neural Architectures (`models/`)**:
-  - **Conv1DBiLSTMAttention**: Multi-scale 1D convolutions (kernel sizes 3, 5, 7) coupled with 2-layer Bidirectional LSTM and Temporal Self-Attention pooling.
-  - **TrajectoryTransformer**: Multi-head self-attention encoder with sinusoidal positional encodings.
-  - **Classical Baselines**: Random Forest & SVM on extracted kinematic (jerk, curvature) and spectral (4–7 Hz tremor power) features.
-- **Assistive NLP & Error Recovery (`nlp/word_recognizer.py`)**:
-  - Beam search decoder over stroke posterior distributions.
-  - Assistive vocabulary dictionary for medical and daily care communication ("HELP", "WATER", "MEDS", "PAIN", "NURSE", "YES", "NO").
-- **Interactive Full-Stack Web Application (`app/web_app.py`)**:
-  - Real-time air-writing canvas and touchless webcam tracking.
-  - Live kinematic bio-feedback dashboard (4–7 Hz tremor power, normalized jerk, mean velocity).
-  - Speech synthesis (Text-to-Speech).
+AirAssist is a Python-based air-writing application that explores contactless character recognition and assistive text interaction using hand movements captured through a webcam or drawn on a digital canvas.
+
+The project combines computer vision, trajectory processing, deep learning, simulated motor impairments, and word-level text assistance in an interactive web application.
+
+> **Project scope:** This is an experimental software prototype. Its impairment simulation uses synthetically generated trajectories. It has not been clinically validated and is not intended for Parkinson's disease diagnosis or medical decision-making.
 
 ---
 
-## 3. Benchmark Results
+## Features
 
-Evaluated across 1,620 multi-subject trajectory samples spanning 36 classes (`0-9`, `A-Z`):
+### 1. Air-Writing Canvas
+- Draw letters, numbers, and words using an interactive digital canvas.
+- Submit drawn input for character recognition.
+- Build text using recognized characters.
+- Edit the generated text using space, backspace, and clear controls.
 
-| Impairment Severity Tier       | Top-1 Accuracy | Top-3 Accuracy | Top-5 Accuracy | Macro F1 | Inference Latency |
-| :----------------------------- | :------------: | :------------: | :------------: | :------: | :---------------: |
-| **Control (Typical)**          |   **99.86%**   |    100.00%     |    100.00%     |  0.9986  | 19.5 ms (~51 FPS) |
-| **Mild PD (4.5–6 Hz Tremor)**  |   **99.58%**   |    100.00%     |    100.00%     |  0.9958  | 19.5 ms (~51 FPS) |
-| **Moderate PD (+ Rigidity)**   |   **99.58%**   |    100.00%     |    100.00%     |  0.9958  | 19.5 ms (~51 FPS) |
-| **Severe PD (+ Micrographia)** |   **99.44%**   |    100.00%     |    100.00%     |  0.9944  | 19.5 ms (~51 FPS) |
+### 2. Webcam-Based Hand Tracking
+- Uses MediaPipe Hands to detect hand landmarks.
+- Tracks the index fingertip for air-writing interaction.
+- Supports gesture states such as drawing, pen lift, and clearing the canvas.
+- Uses OpenCV for image and webcam-frame processing.
+
+### 3. Character Recognition
+The project includes trajectory-based recognition models:
+
+- **Multi-scale 1D CNN + BiLSTM:** Learns spatial and sequential patterns in writing trajectories.
+- **Trajectory Transformer:** Uses self-attention to process trajectory sequences.
+- **Random Forest and SVM:** Classical machine-learning baselines using engineered trajectory features.
+
+The recognition pipeline includes trajectory filtering, normalization, resampling, and classification.
+
+### 4. Synthetic Motor-Impairment Simulator
+The simulator generates modified writing trajectories for four experimental settings:
+
+- Control
+- Mild
+- Moderate
+- Severe
+
+The synthetic transformations include:
+- Tremor-like oscillations
+- Movement slowing and hesitation
+- Progressive trajectory shrinkage
+- Overshoot and trajectory noise
+
+These are simulated movement effects, not measurements from people with Parkinson's disease.
+
+### 5. Assistive Word Suggestions
+- Beam-search decoding of character prediction sequences.
+- Vocabulary-based word suggestions.
+- Levenshtein-distance-based spelling correction.
+- Prefix-based autocomplete.
+- An assistive vocabulary containing everyday and care-related expressions.
+
+### 6. Text-to-Speech
+The web interface includes a Speak control for reading constructed text aloud using browser speech functionality.
+
+### 7. Movement Feature Analysis
+The project extracts trajectory characteristics such as:
+- Mean and maximum movement speed
+- Acceleration and jerk
+- Curvature
+- Path length and efficiency
+- Tremor-band frequency features
+- Geometric trajectory measurements
+
+These are software-derived movement features, not clinically validated biomarkers.
 
 ---
 
-## 4. Quickstart & Usage
+## Technology Stack
 
-### A. Run Interactive Web Application
+| Area | Technologies |
+|---|---|
+| Programming language | Python |
+| Deep learning | PyTorch |
+| Machine learning | Scikit-learn |
+| Computer vision | OpenCV |
+| Hand tracking | MediaPipe Hands |
+| Numerical processing | NumPy, SciPy |
+| Web application | Flask, HTML, CSS, JavaScript |
+| Text assistance | Beam search, Levenshtein distance |
+| Speech output | Browser Text-to-Speech |
+
+---
+
+## Recognition Classes
+
+The character template module defines 36 recognition classes:
+
+- Digits: `0–9`
+- Uppercase letters: `A–Z`
+
+The trajectory models are configured to process three-channel input sequences, with the standard trajectory representation using 64 sampled points.
+
+---
+
+## Project Architecture
+
+```mermaid
+flowchart TD
+    A["User Input"] --> B["Digital Canvas"]
+    A --> C["Webcam Input"]
+    C --> D["MediaPipe Hand Tracking"]
+    D --> E["Fingertip Trajectory"]
+    B --> F["Canvas Image / Stroke Data"]
+    E --> G["Trajectory Processing"]
+    G --> H["Trajectory Recognition"]
+    F --> I["Canvas Image Recognition"]
+    H --> J["Character Predictions"]
+    I --> J
+    J --> K["Word Suggestions and Decoding"]
+    K --> L["Constructed Text"]
+    L --> M["Text-to-Speech"]
+    N["Synthetic Motor Simulator"] --> G
+```
+
+The application contains both canvas-image recognition and trajectory-based recognition paths. The canvas prediction endpoint attempts the image-based recognizer first and uses trajectory recognition as a fallback when applicable.
+
+---
+
+## Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/M-Nivetha7/parkinson_research1.git
+cd parkinson_research1
+```
+
+### 2. Create a virtual environment
+
+```bash
+python3 -m venv .venv
+```
+
+Activate it:
+
+**macOS / Linux**
+```bash
+source .venv/bin/activate
+```
+
+**Windows**
+```bash
+.venv\Scripts\activate
+```
+
+### 3. Install dependencies
+
+The repository currently does not provide a root-level `requirements.txt`. Install the packages required by the application:
+
+```bash
+python -m pip install numpy scipy flask opencv-python torch scikit-learn
+```
+
+For webcam hand tracking, install MediaPipe if it is supported by your Python version and operating system:
+
+```bash
+python -m pip install mediapipe
+```
+
+### 4. Start the web application
 
 ```bash
 python -m app.web_app
 ```
 
-Open `http://localhost:5050` in your web browser. On hosting platforms, the app uses the `PORT` environment variable automatically.
+Open the following address in your browser:
 
-### B. Run Interactive Terminal Demo
-
-```bash
-PYTHONNOUSERSITE=1 /usr/local/bin/python3.11 cli_demo.py
+```text
+http://localhost:5050
 ```
 
-### C. Run Full Test Suite
-
-```bash
-PYTHONNOUSERSITE=1 /usr/local/bin/python3.11 -m unittest discover -s tests -p "test_*.py" -v
-```
-
-### D. Retrain All Models
-
-```bash
-PYTHONNOUSERSITE=1 /usr/local/bin/python3.11 train.py --epochs 30 --samples_per_class 45 --model all
-```
-
-### E. Run Systematic Benchmark
-
-```bash
-PYTHONNOUSERSITE=1 /usr/local/bin/python3.11 eval/benchmark.py
-```
+The application uses port `5050` by default. A different port can be supplied through the `PORT` environment variable or the application's command-line argument.
 
 ---
 
-## 5. API Reference
+## Model Checkpoints
 
-- `POST /api/predict`: Infer intended character from raw trajectory coordinates `[[x, y, z], ...]`.
-- `POST /api/simulate`: Generate and classify a synthetic Parkinsonian trajectory for a given character and severity.
-- `POST /api/decode_word`: Perform beam search decoding and vocabulary correction against assistive words.
-- `POST /api/process_frame`: Process a base64 webcam frame for live touchless hand tracking.
+The web application looks for trained model checkpoints in the `saved_models/` directory.
+
+The trajectory recognition components use these checkpoint filenames:
+
+```text
+saved_models/
+├── conv1d_bilstm.pt
+├── transformer.pt
+└── baseline_rf.pkl
+```
+
+These files are generated or loaded by the project's model-training workflow.
+
+If trained checkpoints are unavailable, the application may initialize models without trained weights. A running interface should not be interpreted as evidence of accurate recognition.
+
+---
+
+## Training
+
+The repository includes a training script:
+
+```bash
+python train.py --model all --epochs 25 --samples_per_class 45
+```
+
+Supported model selections include:
+
+```text
+conv1d_bilstm
+transformer
+baseline_rf
+baseline_svm
+all
+```
+
+Training uses synthetically generated air-writing trajectories.
+
+---
+
+## API Endpoints
+
+The Flask application defines the following endpoints:
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/` | Loads the web interface |
+| POST | `/api/predict` | Predicts characters from canvas image data or trajectory input |
+| POST | `/api/simulate` | Generates a synthetic trajectory and returns prediction information |
+| POST | `/api/decode_word` | Generates word suggestions from character probabilities or a text prefix |
+| POST | `/api/process_frame` | Processes a webcam frame for hand tracking |
+
+The webcam endpoint requires MediaPipe to be installed.
+
+---
+
+## Limitations
+
+- The motor-impairment simulator generates synthetic trajectories.
+- Real-world performance with people experiencing motor impairments has not been established.
+- Recognition quality depends on the availability and suitability of trained model checkpoints.
+- Canvas-image recognition and trajectory recognition use different processing paths.
+- Webcam tracking depends on camera quality, lighting, hand visibility, and landmark detection.
+- Vocabulary-based correction can suggest an incorrect word, particularly for words outside its vocabulary.
+- The project is an experimental prototype, not a production-ready medical device.
+
+---
+
+## Responsible Use
+
+AirAssist is developed for software experimentation and assistive-technology exploration.
+
+The simulated impairment categories are algorithmic settings, not clinical severity assessments. The application must not be used to diagnose Parkinson's disease, estimate an individual's clinical condition, or replace professional medical advice.
+
+No claim of clinical effectiveness or real-patient validation is made.
+
+---
+
+## License
+
+No license file is currently included in this repository. All rights remain with the respective copyright holders. Contact the repository owner before redistributing or reusing the project.
+
+---
+
+## Author
+
+**Nivetha Mayilvaganan**
+
+GitHub: https://github.com/M-Nivetha7
+
+Project repository: https://github.com/M-Nivetha7/parkinson_research1
